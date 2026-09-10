@@ -79,4 +79,24 @@ test.describe('Autenticação e Sessão', () => {
       testData.errorMessages.invalidCredentials
     );
   });
+  test('TC-012: Tentativa de login com usuário bloqueado', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    const inventoryPage = new InventoryPage(page);
+
+    // Pré-condição: Usuário na tela de login
+    await loginPage.goto();
+
+    // Ação: Preencher usuário e senha inválidos e clicar em Login
+    await loginPage.login(
+      testData.users.lockedOut.username,
+      testData.users.lockedOut.password
+    );
+
+    // Resultado esperado: Exibe mensagem "Epic sadface: Sorry, this user has been locked out."; permanece na tela de login (`/`)
+    await expect(page).toHaveURL(/.*/);
+    await expect(loginPage.errorMessage).toBeVisible();
+    await expect(loginPage.errorMessage).toHaveText(
+      testData.errorMessages.lockedOut
+    );
+  });
 });
