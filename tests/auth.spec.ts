@@ -61,7 +61,6 @@ test.describe('Autenticação e Sessão', () => {
   });
   test('TC-011: Tentativa de login com senha incorreta', async ({ page }) => {
     const loginPage = new LoginPage(page);
-    const inventoryPage = new InventoryPage(page);
 
     // Pré-condição: Usuário na tela de login
     await loginPage.goto();
@@ -81,7 +80,6 @@ test.describe('Autenticação e Sessão', () => {
   });
   test('TC-012: Tentativa de login com usuário bloqueado', async ({ page }) => {
     const loginPage = new LoginPage(page);
-    const inventoryPage = new InventoryPage(page);
 
     // Pré-condição: Usuário na tela de login
     await loginPage.goto();
@@ -97,6 +95,25 @@ test.describe('Autenticação e Sessão', () => {
     await expect(loginPage.errorMessage).toBeVisible();
     await expect(loginPage.errorMessage).toHaveText(
       testData.errorMessages.lockedOut
+    );
+  });
+    test('TC-013: Submissão de login com campos vazios', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+
+    // Pré-condição: Usuário na tela de login
+    await loginPage.goto();
+
+    // Ação: Preencher usuário e senha inválidos e clicar em Login
+    await loginPage.login(
+      testData.users.empty.username,
+      testData.users.empty.password
+    );
+
+    // Resultado esperado: Exibe mensagem "Epic sadface: Username is required."; permanece na tela de login (`/`)
+    await expect(page).toHaveURL(/.*/);
+    await expect(loginPage.errorMessage).toBeVisible();
+    await expect(loginPage.errorMessage).toHaveText(
+      testData.errorMessages.usernameRequired
     );
   });
 });
