@@ -1,0 +1,82 @@
+{
+  "users": {
+    "standard": {
+      "username": "standard_user",
+      "password": "secret_sauce"
+    },
+    "performanceGlitch": {
+      "username": "performance_glitch_user",
+      "password": "secret_sauce"
+    },
+    "lockedOut": {
+      "username": "locked_out_user",
+      "password": "secret_sauce"
+    },
+    "invalidCredentials": {
+      "username": "standard_user",
+      "password": "senha_invalida_123"
+    },
+    "empty": {
+      "username": "",
+      "password": ""
+    }
+  },
+  "products": {
+    "backpack": "Sauce Labs Backpack",
+    "bikeLight": "Sauce Labs Bike Light",
+    "boltTShirt": "Sauce Labs Bolt T-Shirt"
+  },
+  "checkoutData": {
+    "valid": {
+      "firstName": "Lucas",
+      "lastName": "Silva",
+      "postalCode": "37540-000"
+    },
+    "missingFirstName": {
+      "firstName": "",
+      "lastName": "Silva",
+      "postalCode": "37540-000"
+    },
+    "missingLastName": {
+      "firstName": "Lucas",
+      "lastName": "",
+      "postalCode": "37540-000"
+    },
+    "missingPostalCode": {
+      "firstName": "Lucas",
+      "lastName": "Silva",
+      "postalCode": ""
+    },
+    "onlyWhitespace": {
+      "firstName": "   ",
+      "lastName": "   ",
+      "postalCode": "   "
+    }
+  },
+  "sortOptions": {
+    "priceLowToHigh": "lohi",
+    "nameZToA": "za"
+  },
+  "errorMessages": {
+    "invalidCredentials": "Epic sadface: Username and password do not match any user in this service",
+    "lockedOut": "Epic sadface: Sorry, this user has been locked out.",
+    "usernameRequired": "Epic sadface: Username is required",
+    "unauthorizedInventory": "Epic sadface: You can only access '/inventory.html' when you are logged in.",
+    "unauthorizedCart": "Epic sadface: You can only access '/cart.html' when you are logged in.",
+    "firstNameRequired": "Error: First Name is required",
+    "lastNameRequired": "Error: Last Name is required",
+    "postalCodeRequired": "Error: Postal Code is required"
+  },
+  "routes": {
+    "login": "/",
+    "inventory": "/inventory.html",
+    "cart": "/cart.html",
+    "checkoutStepOne": "/checkout-step-one.html",
+    "checkoutStepTwo": "/checkout-step-two.html",
+    "checkoutComplete": "/checkout-complete.html"
+  },
+  "headers": {
+    "productsTitle": "Products",
+    "checkoutCompleteHeader": "Thank you for your order!"
+  }
+}
