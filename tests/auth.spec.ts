@@ -59,4 +59,24 @@ test.describe('Autenticação e Sessão', () => {
     await expect(page).toHaveURL(/.*/);
     await expect(loginPage.loginButton).toBeVisible();
   });
+  test('TC-011: Tentativa de login com senha incorreta', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    const inventoryPage = new InventoryPage(page);
+
+    // Pré-condição: Usuário na tela de login
+    await loginPage.goto();
+
+    // Ação: Preencher usuário e senha inválidos e clicar em Login
+    await loginPage.login(
+      testData.users.invalidCredentials.username,
+      testData.users.invalidCredentials.password
+    );
+
+    // Resultado esperado: Exibe mensagem "Epic sadface: Username and password do not match any user in this service"; permanece na tela de login (`/`)
+    await expect(page).toHaveURL(/.*/);
+    await expect(loginPage.errorMessage).toBeVisible();
+    await expect(loginPage.errorMessage).toHaveText(
+      testData.errorMessages.invalidCredentials
+    );
+  });
 });
