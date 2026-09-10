@@ -84,7 +84,7 @@ test.describe('Autenticação e Sessão', () => {
     // Pré-condição: Usuário na tela de login
     await loginPage.goto();
 
-    // Ação: Preencher usuário e senha inválidos e clicar em Login
+    // Ação: Preencher usuário e senha de um usuário bloqueado e clicar em Login
     await loginPage.login(
       testData.users.lockedOut.username,
       testData.users.lockedOut.password
@@ -103,7 +103,7 @@ test.describe('Autenticação e Sessão', () => {
     // Pré-condição: Usuário na tela de login
     await loginPage.goto();
 
-    // Ação: Preencher usuário e senha inválidos e clicar em Login
+    // Ação: Submeter o formulário com campos vazios e clicar em Login
     await loginPage.login(
       testData.users.empty.username,
       testData.users.empty.password
@@ -114,6 +114,30 @@ test.describe('Autenticação e Sessão', () => {
     await expect(loginPage.errorMessage).toBeVisible();
     await expect(loginPage.errorMessage).toHaveText(
       testData.errorMessages.usernameRequired
+    );
+  });
+  test('TC-014: Tentativa de retroceder navegador após logout', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    const inventoryPage = new InventoryPage(page);
+
+    // Pré-condição: Usuário recém deslogado na tela de login
+    await loginPage.goto();
+    await loginPage.login(
+      testData.users.standard.username,
+      testData.users.standard.password
+    );
+    await inventoryPage.openMenu();
+    await inventoryPage.logout();
+
+    // Ação: Retroceder o navegador"
+
+    await page.goBack();
+
+    // Resultado esperado:  Exibe mensagem "Epic sadface: Username is required."; permanece na tela de login (`/`)
+    await expect(page).toHaveURL(/.*/);
+    await expect(loginPage.errorMessage).toBeVisible();
+    await expect(loginPage.errorMessage).toHaveText(
+      testData.errorMessages.unauthorizedInventory
     );
   });
 });
