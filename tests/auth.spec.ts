@@ -35,9 +35,28 @@ test.describe('Autenticação e Sessão', () => {
       testData.users.performanceGlitch.password
     );
 
-    // Resultado esperado: Redireciona para "/inventory.html" e título "Products" é visível
+    // Resultado esperado: O sistema aguarda o carregamento assíncrono sem estourar timeout. Redireciona para "/inventory.html" e título "Products" é visível
     await expect(page).toHaveURL(/.*inventory\.html/);
     await expect(inventoryPage.title).toBeVisible();
     await expect(inventoryPage.title).toHaveText(testData.headers.productsTitle);
+  });
+  test('TC-003: Logout', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    const inventoryPage = new InventoryPage(page);
+
+    // Pré-condição: Usuário autenticado na rota “/inventory.html”
+    await loginPage.goto();
+    await loginPage.login(
+      testData.users.standard.username,
+      testData.users.standard.password
+    );
+
+    // Ação: Clicar no menu lateral. Clicar em Logout"
+    await inventoryPage.openMenu();
+    await inventoryPage.logout();
+
+    // Resultado esperado: Sessão finalizada; redireciona para a tela de login (`/`)
+    await expect(page).toHaveURL(/.*/);
+    await expect(loginPage.loginButton).toBeVisible();
   });
 });
