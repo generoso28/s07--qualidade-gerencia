@@ -1,5 +1,3 @@
-# Automação de Testes - SauceDemo
-
 Projeto de testes automatizados ponta a ponta (E2E) desenvolvido com Playwright e TypeScript para a aplicação SauceDemo.
 
 ## Pré-requisitos
@@ -71,9 +69,9 @@ npm run test:ui
 - .github/workflows/: Pipeline de CI/CD para execução automática no GitHub Actions.
 
 ## Sobre uso de Inteligência Artificial
-Utilizou-se ferramentas de Inteligência Artificial como fonte de pesquisa e auxílio nos seguintes moldes:
-- Escolhida a ferramenta (Playwright) e o site que seria testado (Saucedemo), elaboramos um rascunho do plano de testes e, posteriormente, enviamos esse rascunho para que a LLM verificasse se o escopo era válido e sugerisse ajustes. Como objeto de resposta recebemos um arquivo de texto que revisamos e alteramos para remover excessos e alucinações, para que pudessemos, assim, entregar o arquivo finalizado em .pdf.
-- Ainda no âmbito da pesquisa, utilizou-se da mesma LLM para entender qual era a estrutura de diretórios padrão do Playwright (fixtures, pages, tests...) para que já iniciassemos os testes com a organização recomendada.
+Utilizou-se ferramentas de Inteligência Artificial, Gemini e Antigravity, como fonte de pesquisa e auxílio nos seguintes moldes:
+- Escolhida a ferramenta (Playwright) e o site que seria testado (Saucedemo), elaboramos um rascunho do plano de testes e, posteriormente, enviamos esse rascunho para que o Antigravity verificasse se o escopo era válido e sugerisse ajustes. Como objeto de resposta recebemos um arquivo de texto que analisamos e decidimos o que fazia sentido ou não entrar para o documento. 
+- Ainda no âmbito da pesquisa, utilizou-se o Gemini para entender qual era a estrutura de diretórios padrão do Playwright (fixtures, pages, tests...) para que já iniciássemos os testes com a organização recomendada. [Histórico do chat](https://share.gemini.google/bbIefiIs8GnF)
 - Por fim, este readme, com excessão dessa parte final referente ao uso de IA, foi gerado integralmente com a ferramenta Antigravity, da Google.
 
-Obs.: Todo conteúdo sugerido pelas ferramentas foram revisados e manipulados para que se garantisse a qualidade da entrega final.
+Obs.: Todo conteúdo sugerido pelas ferramentas foram revisados e manipulados para que se garantisse a qualidade da entrega final. O Antigravity não possui opção de exportação de conversas, dessa forma, para as interações com esta ferramenta segue o link com as capturas de tela do chat. [Capturas de tela - Antigravity](https://drive.google.com/drive/folders/1awJr1E-LtrqUhCBxQNGmG5psjrLZJS81?usp=sharing)
