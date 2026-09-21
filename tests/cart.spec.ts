@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
+import { CartPage } from '../pages/CartPage';
 import { InventoryPage } from '../pages/InventoryPage';
 import testData from '../fixtures/testData.json';
 
@@ -89,6 +90,21 @@ test.describe('Domínio de Catálogo e Carrinho', () => {
     const sortedDescending = [...names].sort((a, b) => b.localeCompare(a));
     expect(names).toEqual(sortedDescending);
   });
+
+  test('TC-010: Remoção de item dentro da página do carrinho', async ({ page }) => {
+    const inventoryPage = new InventoryPage(page);
+    const cartPage = new CartPage(page); 
+
+    await inventoryPage.addProductToCart(testData.products.backpack);
+    await inventoryPage.cartBadge.click();
+    await expect(page).toHaveURL(/.*cart\.html/);
+
+    await cartPage.removeProduct(testData.products.backpack);
+
+    await expect(cartPage.cartItem).toHaveCount(0);
+    await expect(inventoryPage.cartBadge).toBeHidden();
+  });
+  
 });
 
 
