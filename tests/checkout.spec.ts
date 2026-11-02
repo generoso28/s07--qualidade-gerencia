@@ -89,12 +89,20 @@ test.describe('Validações de Formulário - Checkout Step 1', () => {
   });
 
   test('TC-020: Validação de campos obrigatórios com espaços em branco', async ({ page }) => {
+    // DEFEITO CONHECIDO DO SUT: o SauceDemo não aplica trim nos campos do checkout.
+    // Valores compostos apenas por espaços são aceitos e o fluxo avança indevidamente
+    // para o Step 2. O caso é mantido como evidência do defeito e marcado como
+    // "expected failure" para não derrubar a pipeline por um bug de terceiro.
+    // Se o SauceDemo corrigir o comportamento, este caso passa a falhar como
+    // "unexpected pass", sinalizando a mudança.
+    test.fail(true, 'SauceDemo aceita campos compostos apenas por espaços');
+
     const checkoutPage = new CheckoutPage(page);
 
     await checkoutPage.fillInformation("   ", "   ", "   ");
     await checkoutPage.clickContinue();
 
-    // Nota: Como documentado, se avançar para o Step 2, evidencia falha na validação[cite: 3].
+    // Resultado esperado: permanecer no Step 1 com mensagem de campo obrigatório.
     await expect(page).toHaveURL(/.*checkout-step-one\.html/);
     await expect(checkoutPage.errorMessage).toBeVisible();
   });

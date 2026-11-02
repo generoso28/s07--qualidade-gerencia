@@ -7,7 +7,9 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "build": "tsc --noEmit",
+    "coverage": "node scripts/test-coverage.js 90"
   },
   "keywords": [],
   "type": "commonjs",
