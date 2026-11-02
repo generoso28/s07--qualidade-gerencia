@@ -1,0 +1,31 @@
+# ---------------------------------------------------------------------------
+# Container que executa a suíte Playwright.
+#
+# A tag da imagem DEVE casar com a versão de @playwright/test declarada em
+# package.json (1.62.1). Caso contrário o Chromium embutido fica incompatível
+# com o driver usado pelos testes.
+# ---------------------------------------------------------------------------
+FROM mcr.microsoft.com/playwright:v1.62.1-noble
+
+USER root
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      git \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /workspace \
+    && chown ubuntu:ubuntu /workspace
+
+# A imagem oficial já possui o usuário `ubuntu` com UID 1000 — o mesmo UID do
+# usuário `jenkins`. Assim o Jenkins e o runner escrevem no volume `workspace`
+# com o mesmo dono, evitando arquivos de root que o Jenkins não conseguiria
+# remover (deleteDir) no build seguinte.
+USER ubuntu
+ENV HOME=/home/ubuntu
+
+WORKDIR /workspace
+
+# O container permanece ativo para receber comandos do Jenkins via `docker exec`.
+# O código e as dependências vivem no volume `workspace`, compartilhado com o
+# container do Jenkins, garantindo que os testes rodem sobre o commit atual.
+CMD ["tail", "-f", "/dev/null"]

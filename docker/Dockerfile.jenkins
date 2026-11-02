@@ -1,0 +1,65 @@
+FROM jenkins/jenkins:lts-jdk21
+
+USER root
+
+ARG NODE_MAJOR=22
+
+# ---------------------------------------------------------------------------
+# Dependências de sistema
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      git \
+      gnupg \
+      lsb-release \
+      gosu \
+      msmtp \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Node.js — necessário para o pipeline executar npm
+# ---------------------------------------------------------------------------
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Docker CLI — Docker-outside-of-Docker (DooD)
+#
+# Instalamos apenas o cliente. O daemon utilizado é o do host, acessível pelo
+# socket montado em /var/run/docker.sock. Isso permite ao Jenkins executar
+# `docker exec` no container playwright-runner sem precisar de DinD.
+# ---------------------------------------------------------------------------
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+       https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+       > /etc/apt/sources.list.d/docker.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends docker-ce-cli \
+    && rm -rf /var/lib/apt/lists/*
+
+# Permite ao usuário jenkins usar o socket montado
+RUN groupadd -f docker && usermod -aG docker jenkins
+
+# ---------------------------------------------------------------------------
+# Configuração de e-mail (msmtp)
+#
+# O template é preenchido em runtime pelo entrypoint com as variáveis de
+# ambiente. Credenciais nunca entram na imagem (ficariam no `docker history`).
+# ---------------------------------------------------------------------------
+COPY docker/jenkins/msmtprc.template /etc/msmtprc.template
+COPY docker/scripts/jenkins-entrypoint.sh /usr/local/bin/jenkins-entrypoint.sh
+RUN chmod +x /usr/local/bin/jenkins-entrypoint.sh
+
+# ---------------------------------------------------------------------------
+# Plugins declarados como código (Infrastructure as Code)
+# ---------------------------------------------------------------------------
+COPY docker/jenkins/plugins.txt /usr/share/jenkins/ref/plugins.txt
+RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
+
+EXPOSE 8080 50000
+
+ENTRYPOINT ["/usr/local/bin/jenkins-entrypoint.sh"]

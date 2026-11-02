@@ -1,0 +1,11 @@
+workflow-aggregator
+pipeline-stage-view
+pipeline-utility-steps
+git
+junit
+htmlpublisher
+credentials-binding
+plain-credentials
+ansicolor
+timestamper
+build-timeout
