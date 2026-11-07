@@ -210,8 +210,7 @@ docker build -f docker/Dockerfile.playwright -t ${DOCKERHUB_USER}/s07-playwright
 docker push ${DOCKERHUB_USER}/s07-playwright-runner:1.0.0
 ```
 
-Link da imagem: `https://hub.docker.com/r/${DOCKERHUB_USER}/s07-playwright-runner`
-(substitua pelo usuário real do grupo após a publicação).
+Link da imagem: `https://hub.docker.com/r/mgazzolaa/s07-playwright-runner`
 
 ## Estrutura do projeto
 
