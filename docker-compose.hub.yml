@@ -1,0 +1,107 @@
+name: s07
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-s07}
+      POSTGRES_USER: ${POSTGRES_USER:-s07}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - pipeline-net
+
+  playwright-runner:
+    image: ${DOCKERHUB_USER:?Defina DOCKERHUB_USER no .env}/s07-playwright-runner:1.0.0
+    container_name: playwright-runner
+    restart: unless-stopped
+    init: true
+    shm_size: "1gb"
+    pull_policy: always
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:-s07}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
+      PGDATABASE: ${POSTGRES_DB:-s07}
+      TZ: ${TZ:-America/Sao_Paulo}
+    volumes:
+      - workspace:/workspace
+      - relatorios:/relatorios
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pipeline-net
+
+  relatorio-server:
+    image: nginx:alpine
+    container_name: relatorio-server
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - relatorios:/usr/share/nginx/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - pipeline-net
+
+  jenkins:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.jenkins
+    container_name: jenkins
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_PASS: ${GMAIL_PASS:-}
+      DESTINATARIO_EMAIL: ${DESTINATARIO_EMAIL:-}
+      JENKINS_URL: ${JENKINS_URL:-http://localhost:8080}
+      RELATORIOS_URL: ${RELATORIOS_URL:-http://localhost:8081}
+      TZ: ${TZ:-America/Sao_Paulo}
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - workspace:/workspace
+      - relatorios:/relatorios
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      playwright-runner:
+        condition: service_started
+      relatorio-server:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/login >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    networks:
+      - pipeline-net
+
+volumes:
+  jenkins-data:
+  workspace:
+  relatorios:
+  pgdata:
+
+networks:
+  pipeline-net:
+    driver: bridge
