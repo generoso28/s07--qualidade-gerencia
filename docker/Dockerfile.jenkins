@@ -45,6 +45,15 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 RUN groupadd -f docker && usermod -aG docker jenkins
 
 # ---------------------------------------------------------------------------
+# Plugins declarados como código (Infrastructure as Code)
+#
+# Esta camada fica antes dos arquivos de configuração para que mudanças no
+# msmtp/entrypoint não forcem o download dos plugins novamente.
+# ---------------------------------------------------------------------------
+COPY docker/jenkins/plugins.txt /usr/share/jenkins/ref/plugins.txt
+RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
+
+# ---------------------------------------------------------------------------
 # Configuração de e-mail (msmtp)
 #
 # O template é preenchido em runtime pelo entrypoint com as variáveis de
@@ -52,13 +61,8 @@ RUN groupadd -f docker && usermod -aG docker jenkins
 # ---------------------------------------------------------------------------
 COPY docker/jenkins/msmtprc.template /etc/msmtprc.template
 COPY docker/scripts/jenkins-entrypoint.sh /usr/local/bin/jenkins-entrypoint.sh
-RUN chmod +x /usr/local/bin/jenkins-entrypoint.sh
-
-# ---------------------------------------------------------------------------
-# Plugins declarados como código (Infrastructure as Code)
-# ---------------------------------------------------------------------------
-COPY docker/jenkins/plugins.txt /usr/share/jenkins/ref/plugins.txt
-RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
+RUN sed -i 's/\r$//' /usr/local/bin/jenkins-entrypoint.sh \
+    && chmod +x /usr/local/bin/jenkins-entrypoint.sh
 
 EXPOSE 8080 50000
 

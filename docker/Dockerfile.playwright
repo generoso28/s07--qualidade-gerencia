@@ -13,13 +13,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
       git \
     && rm -rf /var/lib/apt/lists/* \
+    && (id -u ubuntu >/dev/null 2>&1 || useradd --create-home --uid 1000 ubuntu) \
     && mkdir -p /workspace \
-    && chown ubuntu:ubuntu /workspace
+    && chown -R ubuntu:ubuntu /workspace
 
-# A imagem oficial já possui o usuário `ubuntu` com UID 1000 — o mesmo UID do
-# usuário `jenkins`. Assim o Jenkins e o runner escrevem no volume `workspace`
-# com o mesmo dono, evitando arquivos de root que o Jenkins não conseguiria
-# remover (deleteDir) no build seguinte.
+# A imagem oficial do Playwright tem o usuário `ubuntu` com UID 1000 — o mesmo
+# UID do usuário `jenkins`. Assim o Jenkins e o runner escrevem no volume
+# `workspace` com o mesmo dono, evitando arquivos de root que o Jenkins não
+# conseguiria remover (deleteDir) no build seguinte.
 USER ubuntu
 ENV HOME=/home/ubuntu
 

@@ -4,7 +4,7 @@ tls            on
 tls_trust_file /etc/ssl/certs/ca-certificates.crt
 logfile        /var/log/msmtp.log
 
-account        default
+account        gmail
 host           smtp.gmail.com
 port           587
 tls_starttls   on
@@ -12,4 +12,4 @@ from           GMAIL_USER_PLACEHOLDER
 user           GMAIL_USER_PLACEHOLDER
 password       GMAIL_PASS_PLACEHOLDER
 
-account default : default
+account default : gmail
