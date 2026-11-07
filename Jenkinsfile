@@ -10,7 +10,7 @@ pipeline {
 
   environment {
     RUNNER = 'playwright-runner'
-    WS     = '/workspace'
+    WS     = '/workspace/project'
   }
 
   stages {
