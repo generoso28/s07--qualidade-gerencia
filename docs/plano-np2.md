@@ -290,7 +290,7 @@ pipeline {
         publishHTML(target: [reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'E2E'])
       }
       sh "docker exec -w ${WS} ${RUNNER} node scripts/store-result.js"
-      sh "docker/scripts/notify.sh '${currentBuild.currentResult}' '${env.BUILD_URL}' '${env.DESTINATARIO_EMAIL}'"
+      sh "bash docker/scripts/notify.sh '${currentBuild.currentResult}' '${env.BUILD_URL}' '${env.DESTINATARIO_EMAIL}'"
     }
   }
 }
@@ -342,9 +342,6 @@ workflow-aggregator
 pipeline-stage-view
 pipeline-utility-steps
 git
-github
-docker-workflow
-docker-plugin
 junit
 htmlpublisher
 credentials-binding
