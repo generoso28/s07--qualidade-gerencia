@@ -17,7 +17,10 @@ pipeline {
     stage('Checkout') {
       steps {
         dir(WS) {
-          deleteDir()
+          // /workspace é um volume Docker montado. deleteDir() tenta remover
+          // o próprio mount point e falha com "Operation not permitted".
+          // Limpamos apenas o conteúdo, preservando o diretório raiz.
+          sh 'find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +'
           checkout scm
         }
       }
