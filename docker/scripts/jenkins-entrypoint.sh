@@ -27,7 +27,8 @@ if [[ -n "${GMAIL_USER:-}" && -n "${GMAIL_PASS:-}" ]]; then
     USER_ESCAPED="$(sed_escape "${GMAIL_USER}")"
     PASS_ESCAPED="$(sed_escape "${GMAIL_PASS}")"
 
-    sed -e "s|GMAIL_USER_PLACEHOLDER|${USER_ESCAPED}|g" \
+    sed -e 's/\r$//' \
+        -e "s|GMAIL_USER_PLACEHOLDER|${USER_ESCAPED}|g" \
         -e "s|GMAIL_PASS_PLACEHOLDER|${PASS_ESCAPED}|g" \
         /etc/msmtprc.template > /etc/msmtprc
 
@@ -50,7 +51,12 @@ fi
 mkdir -p /relatorios /workspace
 chown -R jenkins:jenkins /relatorios /workspace
 chmod 755 /relatorios
-echo "[OK] Permissões de /relatorios e /workspace ajustadas."
+
+# O msmtp grava em /var/log/msmtp.log; /var/log pertence ao root na imagem.
+touch /var/log/msmtp.log
+chown jenkins:jenkins /var/log/msmtp.log
+chmod 644 /var/log/msmtp.log
+echo "[OK] Permissões de /relatorios, /workspace e /var/log/msmtp.log ajustadas."
 
 # ---------------------------------------------------------------------------
 # 3. Socket do Docker (Docker-outside-of-Docker)

@@ -1,0 +1,12 @@
+* text=auto
+
+# Scripts e arquivos consumidos por containers Linux precisam de LF,
+# mesmo quando o checkout é feito no Windows.
+*.sh text eol=lf
+Dockerfile* text eol=lf
+Jenkinsfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Tudo que é copiado para dentro das imagens Linux deve permanecer com LF.
+docker/** text eol=lf
