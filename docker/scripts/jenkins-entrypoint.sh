@@ -3,8 +3,9 @@
 # Entrypoint do container Jenkins.
 #
 # Responsabilidades:
-#   1. Gerar /etc/msmtprc a partir do template, injetando as credenciais que
-#      chegam por variável de ambiente (nunca gravadas na imagem).
+#   1. Gerar /etc/msmtprc conforme MAIL_TRANSPORT:
+#        - mailpit (padrão de desenvolvimento): SMTP local, sem envio real
+#        - gmail: envio real via smtp.gmail.com (usa GMAIL_USER / GMAIL_PASS)
 #   2. Ajustar as permissões do volume de relatórios.
 #   3. Ajustar a permissão do socket do Docker (DooD).
 #   4. Iniciar o Jenkins como usuário `jenkins` (não como root).
@@ -23,21 +24,40 @@ sed_escape() {
 # ---------------------------------------------------------------------------
 # 1. E-mail (msmtp)
 # ---------------------------------------------------------------------------
-if [[ -n "${GMAIL_USER:-}" && -n "${GMAIL_PASS:-}" ]]; then
-    USER_ESCAPED="$(sed_escape "${GMAIL_USER}")"
-    PASS_ESCAPED="$(sed_escape "${GMAIL_PASS}")"
+MAIL_TRANSPORT="${MAIL_TRANSPORT:-mailpit}"
+
+if [[ "${MAIL_TRANSPORT}" == "mailpit" ]]; then
+    FROM_ADDRESS="${GMAIL_USER:-jenkins@s07.local}"
+    FROM_ESCAPED="$(sed_escape "${FROM_ADDRESS}")"
 
     sed -e 's/\r$//' \
-        -e "s|GMAIL_USER_PLACEHOLDER|${USER_ESCAPED}|g" \
-        -e "s|GMAIL_PASS_PLACEHOLDER|${PASS_ESCAPED}|g" \
-        /etc/msmtprc.template > /etc/msmtprc
+        -e "s|MAIL_FROM_PLACEHOLDER|${FROM_ESCAPED}|g" \
+        /etc/msmtprc.mailpit.template > /etc/msmtprc
 
     chown jenkins:jenkins /etc/msmtprc
     chmod 600 /etc/msmtprc
-    echo "[OK] /etc/msmtprc configurado."
+    echo "[OK] /etc/msmtprc configurado para o Mailpit (mailpit:1025). Nenhum e-mail real será enviado."
+
+elif [[ "${MAIL_TRANSPORT}" == "gmail" ]]; then
+    if [[ -n "${GMAIL_USER:-}" && -n "${GMAIL_PASS:-}" ]]; then
+        USER_ESCAPED="$(sed_escape "${GMAIL_USER}")"
+        PASS_ESCAPED="$(sed_escape "${GMAIL_PASS}")"
+
+        sed -e 's/\r$//' \
+            -e "s|GMAIL_USER_PLACEHOLDER|${USER_ESCAPED}|g" \
+            -e "s|GMAIL_PASS_PLACEHOLDER|${PASS_ESCAPED}|g" \
+            /etc/msmtprc.template > /etc/msmtprc
+
+        chown jenkins:jenkins /etc/msmtprc
+        chmod 600 /etc/msmtprc
+        echo "[OK] /etc/msmtprc configurado para o Gmail."
+    else
+        echo "[AVISO] MAIL_TRANSPORT=gmail, mas GMAIL_USER/GMAIL_PASS não estão definidos."
+        echo "        O envio de e-mail ficará indisponível."
+    fi
 else
-    echo "[AVISO] GMAIL_USER/GMAIL_PASS não definidos."
-    echo "        O envio de e-mail ficará indisponível até que sejam configurados."
+    echo "[ERRO] MAIL_TRANSPORT inválido: '${MAIL_TRANSPORT}' (use 'mailpit' ou 'gmail')."
+    exit 1
 fi
 
 # ---------------------------------------------------------------------------
