@@ -20,6 +20,19 @@ services:
     networks:
       - pipeline-net
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      MP_MAX_MESSAGES: "500"
+      TZ: ${TZ:-America/Sao_Paulo}
+    networks:
+      - pipeline-net
+
   playwright-runner:
     build:
       context: .
@@ -74,6 +87,7 @@ services:
       - "8080:8080"
       - "50000:50000"
     environment:
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-mailpit}
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_PASS: ${GMAIL_PASS:-}
       DESTINATARIO_EMAIL: ${DESTINATARIO_EMAIL:-}
@@ -89,6 +103,8 @@ services:
       playwright-runner:
         condition: service_started
       relatorio-server:
+        condition: service_started
+      mailpit:
         condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/login >/dev/null || exit 1"]
