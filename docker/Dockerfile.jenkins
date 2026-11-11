@@ -60,6 +60,7 @@ RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
 # ambiente. Credenciais nunca entram na imagem (ficariam no `docker history`).
 # ---------------------------------------------------------------------------
 COPY docker/jenkins/msmtprc.template /etc/msmtprc.template
+COPY docker/jenkins/msmtprc.mailpit.template /etc/msmtprc.mailpit.template
 COPY docker/scripts/jenkins-entrypoint.sh /usr/local/bin/jenkins-entrypoint.sh
 RUN sed -i 's/\r$//' /usr/local/bin/jenkins-entrypoint.sh \
     && chmod +x /usr/local/bin/jenkins-entrypoint.sh
