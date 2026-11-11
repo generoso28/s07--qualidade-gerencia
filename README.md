@@ -241,9 +241,10 @@ uma nova versão, rode `docker compose pull playwright-runner` antes do `up`.
 │   └── store-result.js
 ├── docs/
 │   ├── plano_de_testes.pdf
-│   ├── plano-np2.md
-│   ├── transcricao-sessao-ia.md
 │   └── anexos/
+│       ├── README.md
+│       ├── sessao-ia-2026-11-02.json
+│       └── transcricao-sessao-ia.md
 ├── .env.example
 └── README.md
 ```

@@ -1,0 +1,148 @@
+# Anexo — Registro Bruto da Sessão de IA
+
+Este diretório guarda a **evidência primária** do uso de IA no projeto: o registro completo da
+sessão, exportado diretamente pelo OpenCode.
+
+| Arquivo | Descrição |
+| --- | --- |
+| `sessao-ia-2026-11-02.json` | Export integral da sessão (1,2 MB, 251 mensagens) |
+| `transcricao-sessao-ia.md` | Transcrição legível do diálogo |
+| `README.md` | Este documento |
+
+---
+
+## 1. Proveniência
+
+| Item | Valor |
+| --- | --- |
+| Sessão | `ses_e62ce1243ffehUBPioGsJzNz8C` |
+| Título | Análise do Projeto_S07_NP2 |
+| Início | 02/11/2026 13:57:37 |
+| Última atualização no export | 02/11/2026 19:46:12 |
+| Modelo | DeepSeek V4.1 Flash Free (`opencode/deepseek-v4.1-flash-free`) |
+| Ambiente | OpenCode (agente de código em terminal) |
+| Resultado | `succeeded` |
+| Tokens | 312.526 entrada · 76.009 saída · 73.784 raciocínio |
+| Custo | US$ 0,00 |
+| Mensagens | 251 |
+| Tamanho | 1.194.247 bytes |
+
+---
+
+## 2. Integridade
+
+```
+SHA-256  68133a53e08623a56cb6b93674b4799623123ac09c23c83c7856dfe9db282c1d
+```
+
+Para verificar que o arquivo não foi alterado:
+
+```bash
+sha256sum docs/anexos/sessao-ia-2026-11-02.json
+```
+
+Qualquer edição manual no JSON muda o hash — é o que permite tratar o arquivo como evidência e
+não como narrativa.
+
+---
+
+## 3. Formato do arquivo
+
+O JSON tem duas chaves:
+
+```jsonc
+{
+  "info":     { /* metadados da sessão: modelo, tokens, custo, tempos */ },
+  "messages": [ /* 251 registros, em ordem cronológica */ ]
+}
+```
+
+Cada item de `messages` tem um campo `type`:
+
+| `type` | Significado | Quantidade |
+| --- | --- | --- |
+| `user` | Mensagem do usuário | 21 |
+| `assistant` | Resposta do agente (texto, ferramentas e raciocínio) | 198 |
+| `idle` | Evento de estado (agente ocioso) | 20 |
+| `synthetic` | Instruções internas do ambiente (system reminders) | 6 |
+| `agent-switched` | Troca de agente (plan ↔ build) | 5 |
+| `compaction` | Resumo automático de contexto | 1 |
+
+Nas mensagens `assistant`, o campo `content` é uma lista de blocos:
+
+| Bloco | Conteúdo |
+| --- | --- |
+| `text` | Resposta em linguagem natural |
+| `tool` | Chamada de ferramenta com entrada, saída e status |
+| `reasoning` | Raciocínio interno do modelo |
+
+É nesse arquivo que estão as **saídas de ferramenta** omitidas da transcrição legível — por
+exemplo, a saída de `npx playwright test`, os logs do `docker build` e as respostas HTTP do
+Jenkins.
+
+---
+
+## 4. Como consultar
+
+```bash
+# Contar mensagens
+python3 -c "import json;d=json.load(open('docs/anexos/sessao-ia-2026-11-02.json'));print(len(d['messages']))"
+
+# Listar apenas as mensagens do usuário
+jq -r '.messages[] | select(.type=="user") | .text' docs/anexos/sessao-ia-2026-11-02.json
+
+# Ver as ferramentas executadas em um turno
+jq -r '.messages[] | select(.type=="assistant") | .content[] | select(.type=="tool") | .name' \
+  docs/anexos/sessao-ia-2026-11-02.json | sort | uniq -c | sort -rn
+
+# Metadados da sessão
+jq '.info' docs/anexos/sessao-ia-2026-11-02.json
+```
+
+---
+
+## 5. Como regerar
+
+```bash
+opencode session export ses_e62ce1243ffehUBPioGsJzNz8C \
+  > docs/anexos/sessao-ia-2026-11-02.json
+```
+
+**Atenção:** exportar com a sessão **aberta** gera um instantâneo — mensagens posteriores ao
+export não aparecem. O hash muda a cada nova exportação, então atualize-o neste README junto.
+
+Exportar pelo pipe (`opencode session export ... | wc -c`) produz saída **truncada**; redirecione
+para arquivo.
+
+### Por que não usamos `--sanitize`
+
+O comando oferece a flag `--sanitize`, mas ela **substitui todo o conteúdo por marcadores**
+(`[redacted:text:...]`, `[redacted:tool-output:...]`) — inclusive as mensagens do usuário. O
+arquivo resultante não serve como evidência, porque não mostra o diálogo.
+
+Antes de versionar, a sessão foi inspecionada em busca de credenciais reais. O que existe são
+apenas **placeholders**:
+
+| Ocorrência | Natureza |
+| --- | --- |
+| `sua-senha-de-app-aqui` | Exemplo do `.env.example` |
+| `senha-de-teste` | Valor fictício usado no teste do container |
+| `abc&def\|ghi`, `abc&def/ghi\|jkl` | Valores fictícios para testar o escape do `sed` |
+| `teste@gmail.com`, `seu-email@gmail.com` | Endereços de exemplo |
+
+Nenhum token (`ghp_`, `sk-`, `AKIA`) ou chave privada foi encontrado. Os endereços de e-mail dos
+integrantes que aparecem no arquivo já são públicos no histórico de commits do repositório.
+
+---
+
+## 6. O que este anexo comprova
+
+| Afirmação | Onde verificar no JSON |
+| --- | --- |
+| O modelo usado foi o declarado | `info.model` |
+| A sessão teve 21 mensagens do usuário | `messages[].type == "user"` |
+| As ferramentas realmente executaram | blocos `tool` com `state.status` e `state.content` |
+| O bug de UID do runner foi detectado e corrigido | busca por `pwuser`, `USER ubuntu`, `deleteDir` |
+| O repositório do professor foi consultado | blocos `tool` com `name == "webfetch"` |
+| As imagens Docker foram buildadas | busca por `Successfully tagged s07-` |
+| O push só ocorreu após autorização | turno 15 (`pode dar push`), seguido de `git push` |
