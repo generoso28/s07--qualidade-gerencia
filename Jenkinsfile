@@ -70,16 +70,6 @@ pipeline {
 
       catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
         sh """
-          BUILD_DURATION='${currentBuild.duration}' \
-          bash ${WS}/docker/scripts/notify.sh \
-            '${currentBuild.currentResult}' \
-            '${env.BUILD_URL}' \
-            '${env.DESTINATARIO_EMAIL}'
-        """
-      }
-
-      catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-        sh """
           docker exec \
             -e BUILD_NUMBER='${env.BUILD_NUMBER}' \
             -e BUILD_STATUS='${currentBuild.currentResult}' \
@@ -88,6 +78,16 @@ pipeline {
             -e BUILD_URL='${env.BUILD_URL}' \
             -w ${WS} ${RUNNER} \
             node scripts/store-result.js
+        """
+      }
+
+      catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+        sh """
+          BUILD_DURATION='${currentBuild.duration}' \
+          bash ${WS}/docker/scripts/notify.sh \
+            '${currentBuild.currentResult}' \
+            '${env.BUILD_URL}' \
+            '${env.DESTINATARIO_EMAIL}'
         """
       }
     }
