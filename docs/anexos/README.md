@@ -6,8 +6,12 @@ sessão, exportado diretamente pelo OpenCode.
 | Arquivo | Descrição |
 | --- | --- |
 | `sessao-ia-2026-11-02.json` | Export integral da sessão (1,2 MB, 251 mensagens) |
-| `transcricao-sessao-ia.md` | Transcrição legível do diálogo |
 | `README.md` | Este documento |
+
+Os documentos de análise derivados dele são:
+
+- `docs/uso-de-ia.md` — análise da interação (decisões, artefatos, evidências, correções);
+- `docs/transcricao-sessao-ia.md` — transcrição legível do diálogo.
 
 ---
 
@@ -98,51 +102,3 @@ jq -r '.messages[] | select(.type=="assistant") | .content[] | select(.type=="to
 # Metadados da sessão
 jq '.info' docs/anexos/sessao-ia-2026-11-02.json
 ```
-
----
-
-## 5. Como regerar
-
-```bash
-opencode session export ses_e62ce1243ffehUBPioGsJzNz8C \
-  > docs/anexos/sessao-ia-2026-11-02.json
-```
-
-**Atenção:** exportar com a sessão **aberta** gera um instantâneo — mensagens posteriores ao
-export não aparecem. O hash muda a cada nova exportação, então atualize-o neste README junto.
-
-Exportar pelo pipe (`opencode session export ... | wc -c`) produz saída **truncada**; redirecione
-para arquivo.
-
-### Por que não usamos `--sanitize`
-
-O comando oferece a flag `--sanitize`, mas ela **substitui todo o conteúdo por marcadores**
-(`[redacted:text:...]`, `[redacted:tool-output:...]`) — inclusive as mensagens do usuário. O
-arquivo resultante não serve como evidência, porque não mostra o diálogo.
-
-Antes de versionar, a sessão foi inspecionada em busca de credenciais reais. O que existe são
-apenas **placeholders**:
-
-| Ocorrência | Natureza |
-| --- | --- |
-| `sua-senha-de-app-aqui` | Exemplo do `.env.example` |
-| `senha-de-teste` | Valor fictício usado no teste do container |
-| `abc&def\|ghi`, `abc&def/ghi\|jkl` | Valores fictícios para testar o escape do `sed` |
-| `teste@gmail.com`, `seu-email@gmail.com` | Endereços de exemplo |
-
-Nenhum token (`ghp_`, `sk-`, `AKIA`) ou chave privada foi encontrado. Os endereços de e-mail dos
-integrantes que aparecem no arquivo já são públicos no histórico de commits do repositório.
-
----
-
-## 6. O que este anexo comprova
-
-| Afirmação | Onde verificar no JSON |
-| --- | --- |
-| O modelo usado foi o declarado | `info.model` |
-| A sessão teve 21 mensagens do usuário | `messages[].type == "user"` |
-| As ferramentas realmente executaram | blocos `tool` com `state.status` e `state.content` |
-| O bug de UID do runner foi detectado e corrigido | busca por `pwuser`, `USER ubuntu`, `deleteDir` |
-| O repositório do professor foi consultado | blocos `tool` com `name == "webfetch"` |
-| As imagens Docker foram buildadas | busca por `Successfully tagged s07-` |
-| O push só ocorreu após autorização | turno 15 (`pode dar push`), seguido de `git push` |
