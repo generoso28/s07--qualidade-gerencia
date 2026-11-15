@@ -34,14 +34,12 @@ services:
       - pipeline-net
 
   playwright-runner:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.playwright
-    image: s07-playwright-runner:local
+    image: mgazzolaa/s07-playwright-runner:1.0.0
     container_name: playwright-runner
     restart: unless-stopped
     init: true
     shm_size: "1gb"
+    pull_policy: always
     environment:
       PGHOST: postgres
       PGPORT: "5432"
@@ -80,7 +78,6 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.jenkins
-    image: s07-jenkins:local
     container_name: jenkins
     restart: unless-stopped
     ports:

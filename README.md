@@ -31,13 +31,13 @@ de imagem no Docker Hub**.
 │  │   jenkins    │────────────────▶│     playwright-runner      │  │
 │  │ Dockerfile   │   docker exec   │  mgazzolaa/s07-playwright- │  │
 │  │   :8080      │                 │  runner:1.0.0              │  │
-│  └──┬──────┬───┘                 └───────┬──────────┬─────────┘  │
-│     │SMTP  │ SQL                        │relatorios│ workspace │
-│     ▼      ▼                            ▼          │           │
-│  ┌────────┐ ┌────────────┐      ┌──────────────┐   │           │
-│  │mailpit │ │  postgres  │      │ relatorio-   │   │           │
-│  │ :8025  │ │   :5432    │      │ server :8081 │   │           │
-│  └────────┘ └────────────┘      └──────────────┘   │           │
+│  └──┬──────┬───┘                  └───────┬──────────┬─────────┘  │
+│     │SMTP  │ SQL                          │relatorios│ workspace  │
+│     ▼      ▼                              ▼          │            │
+│  ┌────────┐ ┌────────────┐        ┌──────────────┐   │            │
+│  │mailpit │ │  postgres  │        │ relatorio-   │   │            │
+│  │ :8025  │ │   :5432    │        │ server :8081 │   │            │
+│  └────────┘ └────────────┘        └──────────────┘   │            │
 │                                                                   │
 │  volumes: jenkins-data · workspace · relatorios · pgdata          │
 └───────────────────────────────────────────────────────────────────┘
@@ -92,7 +92,7 @@ cp .env.example .env
 |---|---|
 | `GMAIL_USER` | Conta Gmail usada como remetente |
 | `GMAIL_PASS` | Senha de app do Gmail |
-| `DESTINATARIO_EMAIL` | Destinatário da notificação (não fica hardcoded) |
+| `DESTINATARIO_EMAIL` | Destinatário da notificação |
 | `POSTGRES_DB` | Nome do banco |
 | `POSTGRES_USER` | Usuário do banco |
 | `POSTGRES_PASSWORD` | Senha do banco |
@@ -181,16 +181,16 @@ docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 
 ### Etapas do pipeline
 
-| Etapa | Tipo | O que faz |
-|---|---|---|
-| Checkout | stage | Limpa `/workspace/project` e faz checkout do repositório |
-| Install | stage | Executa `npm ci` no runner |
-| Testes | stage | Executa os 20 casos com Playwright |
-| Cobertura | stage | Valida o gate de 90% e gera `results/cobertura.md` |
-| Build | stage | Executa `tsc --noEmit`, cria `dist/` e empacota com `npm pack` |
-| Artefatos | post | Publica `dist/**`, `results/**` e `playwright-report/**` |
-| Histórico | post | Grava a execução no PostgreSQL e gera `relatorios/historico.html` |
-| Notificação | post | Envia e-mail via `msmtp` com status, build, commit e links |
+| Etapa       | Tipo  | O que faz |
+|-------------|-------|-------------------------------------------------------------------|
+| Checkout    | stage | Limpa `/workspace/project` e faz checkout do repositório          |
+| Install     | stage | Executa `npm ci` no runner                                        |
+| Testes      | stage | Executa os 20 casos com Playwright                                |
+| Cobertura   | stage | Valida o gate de 90% e gera `results/cobertura.md`                |
+| Build       | stage | Executa `tsc --noEmit`, cria `dist/` e empacota com `npm pack`    |
+| Artefatos   | post  | Publica `dist/**`, `results/**` e `playwright-report/**`          |
+| Histórico   | post  | Grava a execução no PostgreSQL e gera `relatorios/historico.html` |
+| Notificação | post  | Envia e-mail via `msmtp` com status, build, commit e links        |
 
 O pipeline usa `docker exec` no container `playwright-runner`, graças ao socket do
 Docker montado no Jenkins (Docker-outside-of-Docker).
@@ -254,26 +254,20 @@ uma nova versão, rode `docker compose pull playwright-runner` antes do `up`.
 ### Controle de versão
 
 - Repositório Git/GitHub único, com `main` como linha de entrega.
-- Trabalho em branches `feat/*`, `fix/*` e `docs/*`, integradas por pull request.
-- Commits no padrão `tipo(escopo): descrição` (ex.: `feat(pipeline): adiciona stage de cobertura`).
 - `.gitattributes` força LF em scripts, Dockerfiles, Jenkinsfile e YAML, evitando quebra por CRLF.
 - `.gitignore` exclui `node_modules/`, `results/`, `dist/`, relatórios e `.env`; apenas `.env.example` é versionado.
 
 ### Configuração como código
 
-| Artefato | Papel |
-|---|---|
-| `docker/Dockerfile.jenkins` | Imagem do Jenkins: Node 22, Docker CLI (DooD), msmtp e plugins |
-| `docker/Dockerfile.playwright` | Imagem do runner (Playwright 1.62.1) |
-| `docker-compose.yml` | Stack completa: Jenkins local + runner do Hub + PostgreSQL + Nginx + Mailpit |
-| `docker/jenkins/plugins.txt` | Plugins do Jenkins declarados como código |
-| `docker/jenkins/msmtprc*.template` | Configuração de e-mail gerada em runtime, sem credenciais na imagem |
-| `docker/nginx/default.conf` | Publicação dos relatórios |
-| `.env.example` | Contrato das variáveis de ambiente |
-
-Versões pinadas: `@playwright/test` = `1.62.1`, imagem
-`mcr.microsoft.com/playwright:v1.62.1-noble` e runner
-`mgazzolaa/s07-playwright-runner:1.0.0`.
+| Artefato                           | Papel                                                          |
+|----------------------------------  |----------------------------------------------------------------|
+| `docker/Dockerfile.jenkins`        | Imagem do Jenkins: Node 22, Docker CLI, msmtp e plugins        |
+| `docker/Dockerfile.playwright`     | Imagem do runner                                               |
+| `docker-compose.yml`               | Jenkins local + runner do Hub + PostgreSQL + Nginx + Mailpit   |
+| `docker/jenkins/plugins.txt`       | Plugins do Jenkins declarados como código                      |
+| `docker/jenkins/msmtprc*.template` | Configuração de e-mail gerada em runtime                       |
+| `docker/nginx/default.conf`        | Publicação dos relatórios                                      |
+| `.env.example`                     | Contrato das variáveis de ambiente                             |
 
 ### Integração e entrega contínuas
 
@@ -294,23 +288,15 @@ Versões pinadas: `@playwright/test` = `1.62.1`, imagem
 - TC-020 é um defeito conhecido do SUT, marcado com `test.fail()`; não conta como coberto.
 - Relatórios HTML/JUnit/JSON, cobertura em Markdown/JSON e histórico consultável.
 
-### Gestão de mudanças e evidências
-
-- Toda mudança entra por pull request; o histórico do Git registra a evolução.
-- O uso de IA está documentado em "Uso de Inteligência Artificial" e no registro bruto
-  em `docs/anexos/`.
-- Cada execução deixa evidência: build no Jenkins, e-mail, histórico no PostgreSQL e
-  relatórios no Nginx.
-
 ### Evolução do projeto
 
-- **Fase 1:** suíte E2E sobre o SauceDemo.
+- **NP1:** suíte E2E sobre o SauceDemo.
 - **NP2:** containerização, Docker Compose, Jenkins, Docker Hub, PostgreSQL e Nginx,
   sem reescrever a suíte.
 
 ## Uso de Inteligência Artificial
 
-Utilizou-se ferramentas de Inteligência Artificial, Gemini e Antigravity, como fonte
+NP1: Utilizou-se ferramentas de Inteligência Artificial, Gemini e Antigravity, como fonte
 de pesquisa e auxílio nos seguintes moldes:
 
 - Escolhida a ferramenta (Playwright) e o site que seria testado (SauceDemo),
@@ -331,6 +317,8 @@ garantisse a qualidade da entrega final. O Antigravity não possui opção de ex
 de conversas; dessa forma, para as interações com esta ferramenta segue o link com as
 capturas de tela do chat.
 [Capturas de tela - Antigravity](https://drive.google.com/drive/folders/1awJr1E-LtrqUhCBxQNGmG5psjrLZJS81?usp=sharing)
+
+NP2: O uso de IA está documentado em `docs/anexos/`.
 
 ## Solução de problemas
 
