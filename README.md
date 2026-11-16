@@ -17,7 +17,7 @@ de imagem no Docker Hub**.
 - **Suíte:** 20 casos de teste (TC-001 a TC-020), com Page Object Model
 - **Cobertura de testes:** 19/20 = **95%** (TC-020 é um defeito conhecido do SUT)
 - **Gate mínimo:** 90% (`scripts/test-coverage.js`)
-- **Pipeline:** Jenkins **Multibranch** em container, sem GitHub Actions
+- **Pipeline:** Jenkins em container (job `s07-pipeline`, Pipeline script from SCM), sem GitHub Actions
 - **E-mail:** Mailpit (desenvolvimento) ou Gmail (envio real), via `MAIL_TRANSPORT`
 - **Containers:** 5 serviços (Jenkins, runner, PostgreSQL, Nginx e Mailpit)
 - **Relatórios:** Playwright HTML, JUnit, JSON e histórico em PostgreSQL
@@ -25,23 +25,31 @@ de imagem no Docker Hub**.
 ## Arquitetura
 
 ```
-┌────────────────────── pipeline-net (bridge) ──────────────────────┐
-│                                                                   │
-│  ┌──────────────┐   docker.sock   ┌────────────────────────────┐  │
-│  │   jenkins    │────────────────▶│     playwright-runner      │  │
-│  │ Dockerfile   │   docker exec   │  mgazzolaa/s07-playwright- │  │
-│  │   :8080      │                 │  runner:1.0.0              │  │
-│  └──┬──────┬───┘                  └───────┬──────────┬─────────┘  │
-│     │SMTP  │ SQL                          │relatorios│ workspace  │
-│     ▼      ▼                              ▼          │            │
-│  ┌────────┐ ┌────────────┐        ┌──────────────┐   │            │
-│  │mailpit │ │  postgres  │        │ relatorio-   │   │            │
-│  │ :8025  │ │   :5432    │        │ server :8081 │   │            │
-│  └────────┘ └────────────┘        └──────────────┘   │            │
-│                                                                   │
-│  volumes: jenkins-data · workspace · relatorios · pgdata          │
-└───────────────────────────────────────────────────────────────────┘
+GitHub
+  │ 1. Jenkinsfile + código
+  ▼
+┌──────────────┐   docker.sock / docker exec   ┌────────────────────┐
+│   jenkins    │──────────────────────────────▶│ playwright-runner  │
+│   :8080      │                               │ (Docker Hub)       │
+└──┬───────┬───┘                               └──────┬──────┬──────┘
+   │SMTP   │                                           │SQL   │volume
+   ▼       │                                           ▼      ▼
+┌────────┐ │                                     ┌──────────┐ ┌────────────┐
+│mailpit │ │                                     │ postgres │ │ relatorios │
+│1025/8025│ │                                    │  :5432   │ └─────┬──────┘
+└────────┘ │                                     └──────────┘       ▼
+           │                                                  ┌────────────┐
+           │                                                  │   nginx    │
+           │                                                  │   :8081    │
+           │                                                  └────────────┘
+   volumes: workspace (Jenkins ↔ runner), relatorios (runner → nginx)
+            jenkins-data (Jenkins), pgdata (PostgreSQL)
 ```
+
+A rede `pipeline-net` conecta os cinco serviços, mas nem toda comunicação passa
+por ela: o `docker exec` usa o socket do Docker e a troca de arquivos usa os
+volumes. A seta `SMTP` aponta para o Mailpit quando `MAIL_TRANSPORT=mailpit`;
+com `MAIL_TRANSPORT=gmail`, o destino é `smtp.gmail.com:587`.
 
 | Container | Origem | Porta | Papel |
 |---|---|---|---|
@@ -50,6 +58,39 @@ de imagem no Docker Hub**.
 | `postgres` | Docker Hub | interna | Histórico de execuções |
 | `relatorio-server` | Docker Hub (nginx) | 8081 | Serve relatórios e histórico |
 | `mailpit` | Docker Hub | 8025, 1025 | Mock de e-mail (SMTP + interface) |
+
+### Comunicação entre os containers
+
+| Origem → Destino | Canal | Uso |
+|---|---|---|
+| `jenkins` → Docker host | `/var/run/docker.sock` | Executar comandos no runner via Docker-outside-of-Docker |
+| `jenkins` → `playwright-runner` | `docker exec` | `npm ci`, Playwright, cobertura, build e histórico |
+| `jenkins` ↔ `playwright-runner` | Volume `workspace` | Código em `/workspace/project` e resultados dos testes |
+| `playwright-runner` → `postgres` | TCP `5432` na `pipeline-net` | Gravar o histórico das execuções |
+| `playwright-runner` → `relatorio-server` | Volume `relatorios` | Escrever relatórios, cobertura e `historico.html` |
+| `relatorio-server` → host | Porta `8081` | Servir os arquivos do volume `relatorios` |
+| `jenkins` → `mailpit` | SMTP `mailpit:1025` | Notificação local quando `MAIL_TRANSPORT=mailpit` |
+| `jenkins` → Gmail | SMTP `smtp.gmail.com:587` | Notificação real quando `MAIL_TRANSPORT=gmail` |
+| `jenkins` → host | Porta `8080` | Interface web do Jenkins |
+| `mailpit` → host | Porta `8025` | Interface web do Mailpit |
+
+O Jenkins **não acessa o PostgreSQL diretamente**. Quem grava no banco é o
+`playwright-runner`, por meio de `scripts/store-result.js`. O Nginx também não
+recebe uma requisição do runner: ele lê o volume `relatorios` em modo somente
+leitura.
+
+### Ordem de subida
+
+A rede `pipeline-net` não define a ordem das etapas; quem define isso é o
+`Jenkinsfile`. A ordem de inicialização dos containers é controlada pelo
+`depends_on` do Compose:
+
+1. `postgres` sobe e fica `healthy`.
+2. `playwright-runner` sobe depois do Postgres saudável.
+3. `mailpit` e `relatorio-server` sobem em paralelo.
+4. `jenkins` sobe depois que runner, Nginx e Mailpit estão iniciados.
+5. O entrypoint do Jenkins ajusta permissões, gera o `/etc/msmtprc` e inicia o
+   Jenkins.
 
 ## Funcionalidades cobertas
 
@@ -175,14 +216,15 @@ docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 
 3. Conclua o assistente inicial. Os plugins do pipeline já estão na imagem via
    `docker/jenkins/plugins.txt`; não é necessário instalá-los manualmente.
-4. Crie um item **Multibranch Pipeline** apontando para o repositório Git. O Jenkins
-   descobre as branches e executa o `Jenkinsfile` de cada uma; a interface gráfica é
-   usada apenas para o checkout/SCM.
+4. Crie um item **Pipeline** com **Pipeline script from SCM**, apontando para o
+   repositório Git, a branch `main` e o `Jenkinsfile`. A interface gráfica é usada
+   apenas para o checkout/SCM; todas as etapas estão no `Jenkinsfile`.
 
 ### Etapas do pipeline
 
 | Etapa       | Tipo  | O que faz |
 |-------------|-------|-------------------------------------------------------------------|
+| Declarative: Checkout SCM | interno | Jenkins baixa o `Jenkinsfile` do GitHub para o workspace interno |
 | Checkout    | stage | Limpa `/workspace/project` e faz checkout do repositório          |
 | Install     | stage | Executa `npm ci` no runner                                        |
 | Testes      | stage | Executa os 20 casos com Playwright                                |
@@ -271,8 +313,8 @@ uma nova versão, rode `docker compose pull playwright-runner` antes do `up`.
 
 ### Integração e entrega contínuas
 
-- Jenkins em container, em modo **Multibranch Pipeline** (job `S07`): descobre as
-  branches e executa o `Jenkinsfile` de cada uma.
+- Jenkins em container, no job `s07-pipeline` (`Pipeline script from SCM`), apontando
+  para a branch `main` e executando o `Jenkinsfile`.
 - Os comandos de build e teste rodam dentro do `playwright-runner` via `docker exec`,
   sobre o mesmo volume `workspace` em que o Jenkins fez o checkout.
 - Sem GitHub Actions: o pipeline é 100% Jenkins.
@@ -318,7 +360,8 @@ de conversas; dessa forma, para as interações com esta ferramenta segue o link
 capturas de tela do chat.
 [Capturas de tela - Antigravity](https://drive.google.com/drive/folders/1awJr1E-LtrqUhCBxQNGmG5psjrLZJS81?usp=sharing)
 
-NP2: O uso de IA está documentado em `docs/anexos/`.
+NP2: O uso de IA está documentado em `docs/anexos/README.md`, com o JSON bruto da
+sessão e a transcrição legível em `docs/anexos/`.
 
 ## Solução de problemas
 

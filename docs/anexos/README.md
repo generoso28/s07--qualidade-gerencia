@@ -6,12 +6,12 @@ sessão, exportado diretamente pelo OpenCode.
 | Arquivo | Descrição |
 | --- | --- |
 | `sessao-ia-2026-11-02.json` | Export integral da sessão (1,2 MB, 251 mensagens) |
+| `transcricao-sessao-ia.md` | Transcrição legível do diálogo |
 | `README.md` | Este documento |
 
-Os documentos de análise derivados dele são:
-
-- `docs/uso-de-ia.md` — análise da interação (decisões, artefatos, evidências, correções);
-- `docs/transcricao-sessao-ia.md` — transcrição legível do diálogo.
+O JSON é a evidência primária. A transcrição legível é derivada dele e está em
+`docs/anexos/transcricao-sessao-ia.md`. O resumo do uso de IA no projeto está na
+seção correspondente do `README.md` principal.
 
 ---
 
