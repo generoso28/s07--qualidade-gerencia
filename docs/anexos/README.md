@@ -1,17 +1,18 @@
 # Anexo — Registro Bruto da Sessão de IA
 
-Este diretório guarda a **evidência primária** do uso de IA no projeto: o registro completo da
-sessão, exportado diretamente pelo OpenCode.
+Este diretório guarda as **evidências de uso de IA** no projeto. O JSON da sessão de
+02/11/2026 é o registro bruto exportado diretamente pelo OpenCode; a sessão atual de
+implementação/validação está documentada na seção 5.
 
 | Arquivo | Descrição |
 | --- | --- |
 | `sessao-ia-2026-11-02.json` | Export integral da sessão (1,2 MB, 251 mensagens) |
+| `transcricao-sessao-ia.md` | Transcrição legível do diálogo |
 | `README.md` | Este documento |
 
-Os documentos de análise derivados dele são:
-
-- `docs/uso-de-ia.md` — análise da interação (decisões, artefatos, evidências, correções);
-- `docs/transcricao-sessao-ia.md` — transcrição legível do diálogo.
+O JSON é a evidência primária. A transcrição legível é derivada dele e está em
+`docs/anexos/transcricao-sessao-ia.md`. O resumo do uso de IA no projeto está na
+seção correspondente do `README.md` principal.
 
 ---
 
@@ -29,14 +30,14 @@ Os documentos de análise derivados dele são:
 | Tokens | 312.526 entrada · 76.009 saída · 73.784 raciocínio |
 | Custo | US$ 0,00 |
 | Mensagens | 251 |
-| Tamanho | 1.194.247 bytes |
+| Tamanho | 1.209.707 bytes |
 
 ---
 
 ## 2. Integridade
 
 ```
-SHA-256  68133a53e08623a56cb6b93674b4799623123ac09c23c83c7856dfe9db282c1d
+SHA-256  2c8a651032c4485acf571117b7905119dbdc5c146289c8349e15927a8cb99ddb
 ```
 
 Para verificar que o arquivo não foi alterado:
@@ -102,3 +103,34 @@ jq -r '.messages[] | select(.type=="assistant") | .content[] | select(.type=="to
 # Metadados da sessão
 jq '.info' docs/anexos/sessao-ia-2026-11-02.json
 ```
+
+---
+
+## 5. Sessão atual — implementação e validação do NP2
+
+Esta seção registra a sessão usada para analisar o projeto, implementar a camada
+Docker/Jenkins e validar o pipeline. Os números foram consultados no OpenCode em
+16/11/2026 e podem crescer enquanto a sessão estiver ativa.
+
+| Item | Valor |
+| --- | --- |
+| Sessão | `ses_e4dbfd60effe6kp4Of9Us4wEPA` |
+| Título | Análise do projeto |
+| Início | 06/11/2026 16:05 (UTC-3) |
+| Última atualização | 16/11/2026 20:55 (UTC-3) |
+| Modelo | DeepSeek V4.1 Flash (`deepseek/deepseek-flash`, variante `max`) |
+| Agente | `build` |
+| Mensagens | 314 no momento da consulta |
+| Tipos de mensagem | 232 `assistant`, 37 `user`, 36 `idle`, 7 `synthetic`, 2 `system`, 2 `agent-switched` |
+| Tokens de entrada | 767.120 |
+| Tokens de saída | 91.123 |
+| Tokens de raciocínio | 248.573 |
+| Cache lido | 76.335.232 |
+| Custo | US$ 0,5479 |
+| Resultado | Em andamento |
+| Escopo | Análise do projeto, Docker Compose, Jenkins, correções e validação |
+
+O JSON bruto desta sessão **não foi versionado** porque o diálogo contém
+credenciais de teste (Gmail/Jenkins) e dados locais do ambiente. Para publicá-lo
+como evidência, é necessário exportar e sanitizar as credenciais antes de fazer
+o commit.
